@@ -92,6 +92,21 @@ export async function deleteChat({ id }: { id: string }) {
   await deleteChatById({ id });
 }
 
+export async function renameChat({ id, title }: { id: string; title: string }) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const chat = await getChatById({ id });
+  if (!chat || chat.userId !== session.user.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const { updateChatTitleById } = await import("@/lib/db/queries");
+  await updateChatTitleById({ chatId: id, title });
+}
+
 export async function getMostRecentChat() {
   const session = await auth();
   if (!session?.user?.id) {

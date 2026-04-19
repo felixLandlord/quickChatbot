@@ -267,6 +267,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     }),
     [
       chatId,
+      chatData,
       messages,
       setMessages,
       sendMessage,

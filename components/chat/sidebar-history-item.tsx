@@ -1,4 +1,6 @@
+import { renameChat } from "@/app/(chat)/actions";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { memo } from "react";
 import { useChatVisibility } from "@/hooks/use-chat-visibility";
 import type { Chat } from "@/lib/db/schema";
@@ -22,6 +24,7 @@ import {
   GlobeIcon,
   LockIcon,
   MoreHorizontalIcon,
+  PenIcon,
   ShareIcon,
   TrashIcon,
 } from "./icons";
@@ -41,18 +44,65 @@ const PureChatItem = ({
     chatId: chat.id,
     initialVisibilityType: chat.visibility,
   });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(chat.title);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing) {
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isEditing]);
+
+  const handleRename = async () => {
+    const trimmedTitle = editedTitle.trim();
+    if (trimmedTitle && trimmedTitle !== chat.title) {
+      // Update both the chat object and local state so renames work correctly
+      chat.title = trimmedTitle;
+      setEditedTitle(trimmedTitle);
+      await renameChat({ id: chat.id, title: trimmedTitle });
+    }
+    setIsEditing(false);
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleRename();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setEditedTitle(chat.title);
+      setIsEditing(false);
+    }
+  };
 
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton
-        asChild
-        className="h-8 rounded-none text-[13px] text-sidebar-foreground/50 transition-all duration-150 hover:bg-transparent hover:text-sidebar-foreground data-active:bg-transparent data-active:font-normal data-active:text-sidebar-foreground/50 data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium data-[active=true]:border-b data-[active=true]:border-dashed data-[active=true]:border-sidebar-foreground/50"
-        isActive={isActive}
-      >
-        <Link href={`/chat/${chat.id}`} onClick={() => setOpenMobile(false)}>
-          <span className="truncate">{chat.title}</span>
-        </Link>
-      </SidebarMenuButton>
+      {isEditing ? (
+        <input
+          ref={inputRef}
+          type="text"
+          value={editedTitle}
+          onChange={(e) => setEditedTitle(e.target.value)}
+          onBlur={handleRename}
+          onKeyDown={handleKeyDown}
+          className="h-8 w-full rounded-none border-b border-dashed border-sidebar-foreground/50 bg-transparent px-2 text-[13px] text-sidebar-foreground outline-none"
+        />
+      ) : (
+        <SidebarMenuButton
+          asChild
+          className="h-8 rounded-none text-[13px] text-sidebar-foreground/50 transition-all duration-150 hover:bg-transparent hover:text-sidebar-foreground data-active:bg-transparent data-active:font-normal data-active:text-sidebar-foreground/50 data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium data-[active=true]:border-b data-[active=true]:border-dashed data-[active=true]:border-sidebar-foreground/50"
+          isActive={isActive}
+        >
+          <Link href={`/chat/${chat.id}`} onClick={() => setOpenMobile(false)}>
+            <span className="truncate">{chat.title}</span>
+          </Link>
+        </SidebarMenuButton>
+      )}
 
       <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
@@ -104,6 +154,18 @@ const PureChatItem = ({
           </DropdownMenuSub>
 
           <DropdownMenuItem
+            onSelect={() => {
+              // Use setTimeout to ensure dropdown closes before focusing input
+              setTimeout(() => {
+                setIsEditing(true);
+              }, 0);
+            }}
+          >
+            <PenIcon />
+            <span>Rename</span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
             onSelect={() => onDelete(chat.id)}
             variant="destructive"
           >
@@ -117,8 +179,10 @@ const PureChatItem = ({
 };
 
 export const ChatItem = memo(PureChatItem, (prevProps, nextProps) => {
-  if (prevProps.isActive !== nextProps.isActive) {
-    return false;
-  }
-  return true;
+  // Re-render if isActive or chat data changes
+  return (
+    prevProps.isActive === nextProps.isActive &&
+    prevProps.chat.id === nextProps.chat.id &&
+    prevProps.chat.title === nextProps.chat.title
+  );
 });

@@ -21,6 +21,15 @@ This is a free, chatbot app built with Next.js and Vercel AI SDK.
 - [Auth.js](https://authjs.dev)
   - Simple and secure authentication
 
+- **Manual Chat Renaming**
+  - Click the "..." menu next to any chat in the sidebar
+  - Select "Rename" to edit the chat title
+  - Press Enter to save, Escape to cancel
+
+
+- **AI-Powered Chat Title Generation**
+  - New chats automatically generate descriptive titles based on your first message
+
 ## Prerequisites
 
 Before running this project, you'll need to set up the following services:
