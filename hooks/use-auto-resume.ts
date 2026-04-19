@@ -7,7 +7,7 @@ import type { ChatMessage } from "@/lib/types";
 
 export type UseAutoResumeParams = {
   autoResume: boolean;
-  initialMessages: ChatMessage[];
+  initialMessages: ChatMessage[] | undefined;
   resumeStream: UseChatHelpers<ChatMessage>["resumeStream"];
   setMessages: UseChatHelpers<ChatMessage>["setMessages"];
 };
@@ -21,7 +21,7 @@ export function useAutoResume({
   const { dataStream } = useDataStream();
 
   useEffect(() => {
-    if (!autoResume) {
+    if (!autoResume || !initialMessages) {
       return;
     }
 
@@ -30,10 +30,10 @@ export function useAutoResume({
     if (mostRecentMessage?.role === "user") {
       resumeStream();
     }
-  }, [autoResume, initialMessages.at, resumeStream]);
+  }, [autoResume, initialMessages, resumeStream]);
 
   useEffect(() => {
-    if (!dataStream) {
+    if (!dataStream || !initialMessages) {
       return;
     }
     if (dataStream.length === 0) {

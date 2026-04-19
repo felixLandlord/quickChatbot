@@ -41,6 +41,8 @@ export function ChatShell() {
     visibilityType,
     isReadonly,
     isLoading,
+    isInitialized,
+    isNewChat,
     votes,
     currentModelId,
     setCurrentModelId,
@@ -89,6 +91,8 @@ export function ChatShell() {
               chatId={chatId}
               isArtifactVisible={isArtifactVisible}
               isLoading={isLoading}
+              isInitialized={isInitialized}
+              isNewChat={isNewChat}
               isReadonly={isReadonly}
               messages={messages}
               onEditMessage={(msg) => {
@@ -114,6 +118,7 @@ export function ChatShell() {
                   editingMessage={editingMessage}
                   input={input}
                   isLoading={isLoading}
+                  isNewChat={isNewChat}
                   messages={messages}
                   onCancelEdit={() => {
                     setEditingMessage(null);

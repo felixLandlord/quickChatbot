@@ -42,6 +42,8 @@ type ActiveChatContextValue = {
   visibilityType: VisibilityType;
   isReadonly: boolean;
   isLoading: boolean;
+  isInitialized: boolean;
+  isNewChat: boolean;
   votes: Vote[] | undefined;
   currentModelId: string;
   setCurrentModelId: (id: string) => void;
@@ -81,6 +83,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
 
   const [input, setInput] = useState("");
   const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(isNewChat);
 
   const { data: chatData, isLoading } = useSWR(
     isNewChat
@@ -90,9 +93,9 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     { revalidateOnFocus: false }
   );
 
-  const initialMessages: ChatMessage[] = isNewChat
+  const initialMessages: ChatMessage[] | undefined = isNewChat
     ? []
-    : (chatData?.messages ?? []);
+    : chatData?.messages;
   const visibility: VisibilityType = isNewChat
     ? "private"
     : (chatData?.visibility ?? "private");
@@ -108,7 +111,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     addToolApprovalResponse,
   } = useChat<ChatMessage>({
     id: chatId,
-    messages: initialMessages,
+    messages: initialMessages ?? [],
     generateId: generateUUID,
     sendAutomaticallyWhen: ({ messages: currentMessages }) => {
       const lastMessage = currentMessages.at(-1);
@@ -171,31 +174,25 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const loadedChatIds = useRef(new Set<string>());
-
-  if (isNewChat && !loadedChatIds.current.has(newChatIdRef.current)) {
-    loadedChatIds.current.add(newChatIdRef.current);
-  }
+  const isFirstRenderRef = useRef(true);
+  const prevChatIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (loadedChatIds.current.has(chatId)) {
-      return;
-    }
-    if (chatData?.messages) {
-      loadedChatIds.current.add(chatId);
-      setMessages(chatData.messages);
-    }
-  }, [chatId, chatData?.messages, setMessages]);
-
-  const prevChatIdRef = useRef(chatId);
-  useEffect(() => {
-    if (prevChatIdRef.current !== chatId) {
+    if (isNewChat) {
+      setMessages([]);
+      setIsInitialized(true);
       prevChatIdRef.current = chatId;
-      if (isNewChat) {
-        setMessages([]);
+    } else if (chatData?.messages && chatData.messages.length > 0) {
+      if (isFirstRenderRef.current || prevChatIdRef.current !== chatId) {
+        setMessages(chatData.messages);
+        setIsInitialized(true);
+        prevChatIdRef.current = chatId;
+        isFirstRenderRef.current = false;
       }
+    } else {
+      setIsInitialized(false);
     }
-  }, [chatId, isNewChat, setMessages]);
+  }, [isNewChat, chatId, chatData?.messages, setMessages]);
 
   useEffect(() => {
     if (chatData && !isNewChat) {
@@ -259,6 +256,8 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       visibilityType: visibility,
       isReadonly,
       isLoading: !isNewChat && isLoading,
+      isInitialized,
+      isNewChat,
       votes,
       currentModelId,
       setCurrentModelId,
@@ -280,6 +279,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       isReadonly,
       isNewChat,
       isLoading,
+      isInitialized,
       votes,
       currentModelId,
       showCreditCardAlert,
