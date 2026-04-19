@@ -1,15 +1,15 @@
 # quickChatbot
 
-This is a free, chatbot app built with Next.js and LangChain.
+This is a free, chatbot app built with Next.js and Vercel AI SDK.
 
 ## Features
 
 - [Next.js](https://nextjs.org) App Router
   - Advanced routing for seamless navigation and performance
   - React Server Components (RFCs) and Server Actions for server-side rendering and increased performance
-- [LangChain](https://langchain.com) with [Groq](https://groq.com)
-  - Unified API for generating text, structured objects, and tool calls with LLMs
-  - Hooks for building dynamic chat and generative user interfaces
+- [Vercel AI SDK](https://sdk.vercel.ai) with [Groq](https://groq.com)
+  - Direct Groq API integration for generating text, structured objects, and tool calls
+  - Built-in streaming and UI components
   - High-performance inference with Groq's LPU inference engine
 - [shadcn/ui](https://ui.shadcn.com)
   - Styling with [Tailwind CSS](https://tailwindcss.com)
@@ -93,12 +93,10 @@ This app can be deployed to any platform that supports Next.js, including:
 
 ## Available Models
 
-The app is configured to use Groq models which include:
+The app is configured to use Groq models which support tool calling:
 
-- **Llama 3.3 70B Versatile** - Fast and capable model with tool use
-- **Llama 3.1 8B Instant** - Fast small model
-- **GPT OSS 120B** - Open-source 120B parameter model
-- **GPT OSS 20B** - Compact reasoning model
+- **GPT OSS 120B** - Open-source 120B parameter model with tool use
+- **GPT OSS 20B** - Compact reasoning model (used for fast title generation)
 
 All models are available through Groq's free tier with rate limits.
 

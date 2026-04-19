@@ -1,8 +1,8 @@
-export const DEFAULT_CHAT_MODEL = "llama-3.3-70b-versatile";
+export const DEFAULT_CHAT_MODEL = "openai/gpt-oss-120b";
 
 export const titleModel = {
-  id: "llama-3.1-8b-instant",
-  name: "Llama 3.1 8B Instant",
+  id: "openai/gpt-oss-20b",
+  name: "GPT OSS 20B",
   provider: "groq",
   description: "Fast model for title generation",
 };
@@ -23,22 +23,10 @@ export type ChatModel = {
 
 export const chatModels: ChatModel[] = [
   {
-    id: "llama-3.3-70b-versatile",
-    name: "Llama 3.3 70B Versatile",
-    provider: "groq",
-    description: "Fast and capable model with tool use",
-  },
-  {
-    id: "llama-3.1-8b-instant",
-    name: "Llama 3.1 8B Instant",
-    provider: "groq",
-    description: "Fast small model",
-  },
-  {
     id: "openai/gpt-oss-120b",
     name: "GPT OSS 120B",
     provider: "groq",
-    description: "Open-source 120B parameter model",
+    description: "Open-source 120B parameter model with tool use",
   },
   {
     id: "openai/gpt-oss-20b",

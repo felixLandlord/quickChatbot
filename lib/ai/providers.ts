@@ -7,11 +7,8 @@ const groq = createGroq({
 
 export const myProvider = customProvider({
   languageModels: {
-    "llama-3.3-70b-versatile": groq("llama-3.3-70b-versatile"),
-    "llama-3.1-8b-instant": groq("llama-3.1-8b-instant"),
     "openai/gpt-oss-120b": groq("openai/gpt-oss-120b"),
     "openai/gpt-oss-20b": groq("openai/gpt-oss-20b"),
-    "title-model": groq("llama-3.1-8b-instant"),
   },
 });
 
@@ -20,5 +17,5 @@ export function getLanguageModel(modelId: string) {
 }
 
 export function getTitleModel() {
-  return myProvider.languageModel("title-model");
+  return myProvider.languageModel("openai/gpt-oss-20b");
 }
