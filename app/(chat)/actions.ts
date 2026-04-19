@@ -1,0 +1,143 @@
+"use server";
+
+import { generateText, type UIMessage } from "ai";
+import { cookies } from "next/headers";
+import { auth } from "@/app/(auth)/auth";
+import type { VisibilityType } from "@/components/chat/visibility-selector";
+import { titlePrompt } from "@/lib/ai/prompts";
+import { getTitleModel } from "@/lib/ai/providers";
+import {
+  deleteMessagesByChatIdAfterTimestamp,
+  getChatById,
+  getMessageById,
+  updateChatVisibilityById,
+} from "@/lib/db/queries";
+import { getTextFromMessage } from "@/lib/utils";
+
+export async function saveChatModelAsCookie(model: string) {
+  const cookieStore = await cookies();
+  cookieStore.set("chat-model", model);
+}
+
+export async function generateTitleFromUserMessage({
+  message,
+}: {
+  message: UIMessage;
+}) {
+  const { text } = await generateText({
+    model: getTitleModel(),
+    system: titlePrompt,
+    prompt: getTextFromMessage(message),
+  });
+  return text
+    .replace(/^[#*"\s]+/, "")
+    .replace(/["]+$/, "")
+    .trim();
+}
+
+export async function deleteTrailingMessages({ id }: { id: string }) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const [message] = await getMessageById({ id });
+  if (!message) {
+    throw new Error("Message not found");
+  }
+
+  const chat = await getChatById({ id: message.chatId });
+  if (!chat || chat.userId !== session.user.id) {
+    throw new Error("Unauthorized");
+  }
+
+  await deleteMessagesByChatIdAfterTimestamp({
+    chatId: message.chatId,
+    timestamp: message.createdAt,
+  });
+}
+
+export async function updateChatVisibility({
+  chatId,
+  visibility,
+}: {
+  chatId: string;
+  visibility: VisibilityType;
+}) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const chat = await getChatById({ id: chatId });
+  if (!chat || chat.userId !== session.user.id) {
+    throw new Error("Unauthorized");
+  }
+
+  await updateChatVisibilityById({ chatId, visibility });
+}
+
+export async function deleteChat({ id }: { id: string }) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const chat = await getChatById({ id });
+  if (!chat || chat.userId !== session.user.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const { deleteChatById } = await import("@/lib/db/queries");
+  await deleteChatById({ id });
+}
+
+export async function renameChat({ id, title }: { id: string; title: string }) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const chat = await getChatById({ id });
+  if (!chat || chat.userId !== session.user.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const { updateChatTitleById } = await import("@/lib/db/queries");
+  await updateChatTitleById({ chatId: id, title });
+}
+
+export async function getMostRecentChat() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  const { getChatsByUserId } = await import("@/lib/db/queries");
+  const { chats } = await getChatsByUserId({
+    id: session.user.id,
+    limit: 1,
+    startingAfter: null,
+    endingBefore: null,
+  });
+
+  return chats[0] ?? null;
+}
+
+export async function voteMessage({
+  chatId,
+  messageId,
+  type,
+}: {
+  chatId: string;
+  messageId: string;
+  type: "up" | "down";
+}) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const { voteMessage: dbVoteMessage } = await import("@/lib/db/queries");
+  return dbVoteMessage({ chatId, messageId, type });
+}
