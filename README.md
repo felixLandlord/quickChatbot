@@ -2,6 +2,17 @@
 
 This is a free, chatbot app built with Next.js and Vercel AI SDK.
 
+## Screenshots
+
+| Feature | Preview |
+|---------|---------|
+| **Sign Up** | ![Sign Up](screenshots/sign_up.png) |
+| **Chat History** | ![History](screenshots/history.png) |
+| **Chat Editor** | ![Editor](screenshots/editor.png) |
+| **AI Responses** | ![Results](screenshots/editor_results.png) |
+| **Model Selection** | ![Models](screenshots/models.png) |
+| **Editor Toolbar** | ![Toolbar](screenshots/editor_toolbar.png) |
+
 ## Features
 
 - [Next.js](https://nextjs.org) App Router
@@ -119,7 +130,3 @@ pnpm db:migrate    # Apply migrations
 pnpm db:push       # Push schema to database
 pnpm db:studio     # Open Drizzle Studio
 ```
-
-## License
-
-MIT
