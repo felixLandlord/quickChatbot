@@ -1,9 +1,9 @@
-import { withBotId } from "botid/next/config";
 import type { NextConfig } from "next";
 
 const basePath = process.env.IS_DEMO === "1" ? "/demo" : "";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["192.168.0.4", "localhost"],
   ...(basePath
     ? {
         basePath,
@@ -47,8 +47,7 @@ const nextConfig: NextConfig = {
     cachedNavigations: true,
     appNewScrollHandler: true,
     inlineCss: true,
-    turbopackFileSystemCacheForDev: true,
   },
 };
 
-export default withBotId(nextConfig);
+export default nextConfig;

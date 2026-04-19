@@ -1,30 +1,24 @@
-import { customProvider, gateway } from "ai";
-import { isTestEnvironment } from "../constants";
-import { titleModel } from "./models";
+import { customProvider } from "ai";
+import { createGroq } from "@ai-sdk/groq";
 
-export const myProvider = isTestEnvironment
-  ? (() => {
-      const { chatModel, titleModel } = require("./models.mock");
-      return customProvider({
-        languageModels: {
-          "chat-model": chatModel,
-          "title-model": titleModel,
-        },
-      });
-    })()
-  : null;
+const groq = createGroq({
+  apiKey: process.env.GROQ_API_KEY,
+});
+
+export const myProvider = customProvider({
+  languageModels: {
+    "llama-3.3-70b-versatile": groq("llama-3.3-70b-versatile"),
+    "llama-3.1-8b-instant": groq("llama-3.1-8b-instant"),
+    "openai/gpt-oss-120b": groq("openai/gpt-oss-120b"),
+    "openai/gpt-oss-20b": groq("openai/gpt-oss-20b"),
+    "title-model": groq("llama-3.1-8b-instant"),
+  },
+});
 
 export function getLanguageModel(modelId: string) {
-  if (isTestEnvironment && myProvider) {
-    return myProvider.languageModel(modelId);
-  }
-
-  return gateway.languageModel(modelId);
+  return myProvider.languageModel(modelId);
 }
 
 export function getTitleModel() {
-  if (isTestEnvironment && myProvider) {
-    return myProvider.languageModel("title-model");
-  }
-  return gateway.languageModel(titleModel.id);
+  return myProvider.languageModel("title-model");
 }

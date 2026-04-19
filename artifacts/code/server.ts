@@ -1,4 +1,4 @@
-import { streamText } from "ai";
+import { generateText } from "ai";
 import { codePrompt, updateDocumentPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
 import { createDocumentHandler } from "@/lib/artifacts/server";
@@ -15,45 +15,45 @@ export const codeDocumentHandler = createDocumentHandler<"code">({
   onCreateDocument: async ({ title, dataStream, modelId }) => {
     let draftContent = "";
 
-    const { fullStream } = streamText({
-      model: getLanguageModel(modelId),
-      system: `${codePrompt}\n\nOutput ONLY the code. No explanations, no markdown fences, no wrapping.`,
-      prompt: title,
-    });
+    try {
+      const { text } = await generateText({
+        model: getLanguageModel(modelId),
+        prompt: `${codePrompt}\n\nOutput ONLY the code. No explanations, no markdown fences, no wrapping.\n\nTask: ${title}`,
+      });
+      draftContent = text;
 
-    for await (const delta of fullStream) {
-      if (delta.type === "text-delta") {
-        draftContent += delta.text;
-        dataStream.write({
-          type: "data-codeDelta",
-          data: stripFences(draftContent),
-          transient: true,
-        });
-      }
+      dataStream.write({
+        type: "data-codeDelta",
+        data: stripFences(draftContent),
+        transient: true,
+      });
+
+      return stripFences(draftContent);
+    } catch (error) {
+      console.error("Error creating code document:", error);
+      throw error;
     }
-
-    return stripFences(draftContent);
   },
   onUpdateDocument: async ({ document, description, dataStream, modelId }) => {
     let draftContent = "";
 
-    const { fullStream } = streamText({
-      model: getLanguageModel(modelId),
-      system: `${updateDocumentPrompt(document.content, "code")}\n\nOutput ONLY the complete updated code. No explanations, no markdown fences, no wrapping.`,
-      prompt: description,
-    });
+    try {
+      const { text } = await generateText({
+        model: getLanguageModel(modelId),
+        prompt: `${updateDocumentPrompt(document.content, "code")}\n\nTask: ${description}\n\nOutput ONLY the complete updated code. No explanations, no markdown fences, no wrapping.`,
+      });
+      draftContent = text;
 
-    for await (const delta of fullStream) {
-      if (delta.type === "text-delta") {
-        draftContent += delta.text;
-        dataStream.write({
-          type: "data-codeDelta",
-          data: stripFences(draftContent),
-          transient: true,
-        });
-      }
+      dataStream.write({
+        type: "data-codeDelta",
+        data: stripFences(draftContent),
+        transient: true,
+      });
+
+      return stripFences(draftContent);
+    } catch (error) {
+      console.error("Error updating code document:", error);
+      throw error;
     }
-
-    return stripFences(draftContent);
   },
 });

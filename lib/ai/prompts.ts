@@ -1,4 +1,4 @@
-import type { Geo } from "@vercel/functions";
+import type { Geo } from "@/lib/utils";
 import type { ArtifactKind } from "@/components/chat/artifact";
 
 export const artifactsPrompt = `

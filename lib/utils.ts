@@ -9,6 +9,13 @@ import type { DBMessage, Document } from '@/lib/db/schema';
 import { ChatbotError, type ErrorCode } from './errors';
 import type { ChatMessage, ChatTools, CustomUIDataTypes } from './types';
 
+export type Geo = {
+  city?: string;
+  country?: string;
+  latitude?: string;
+  longitude?: string;
+};
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -84,4 +91,55 @@ export function getTextFromMessage(message: ChatMessage | UIMessage): string {
     .filter((part) => part.type === 'text')
     .map((part) => (part as { type: 'text'; text: string}).text)
     .join('');
+}
+
+export function getIpAddress(request: Request): string | undefined {
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0].trim();
+  }
+  
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp) {
+    return realIp;
+  }
+  
+  return undefined;
+}
+
+export function getGeolocation(request: Request): Geo {
+  const cfCity = request.headers.get('cf-ipcity');
+  const cfCountry = request.headers.get('cf-ipcountry');
+  const cfLatitude = request.headers.get('cf-ip-lat');
+  const cfLongitude = request.headers.get('cf-ip-lon');
+  
+  if (cfCity || cfCountry) {
+    return {
+      city: cfCity ?? undefined,
+      country: cfCountry ?? undefined,
+      latitude: cfLatitude ?? undefined,
+      longitude: cfLongitude ?? undefined,
+    };
+  }
+  
+  const vercelCity = request.headers.get('x-vercel-ip-city');
+  const vercelCountry = request.headers.get('x-vercel-ip-country');
+  const vercelLatitude = request.headers.get('x-vercel-ip-latitude');
+  const vercelLongitude = request.headers.get('x-vercel-ip-longitude');
+  
+  if (vercelCity || vercelCountry) {
+    return {
+      city: vercelCity ?? undefined,
+      country: vercelCountry ?? undefined,
+      latitude: vercelLatitude ?? undefined,
+      longitude: vercelLongitude ?? undefined,
+    };
+  }
+  
+  return {
+    city: undefined,
+    country: undefined,
+    latitude: undefined,
+    longitude: undefined,
+  };
 }

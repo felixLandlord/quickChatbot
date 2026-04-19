@@ -4,7 +4,6 @@ import { generateText, type UIMessage } from "ai";
 import { cookies } from "next/headers";
 import { auth } from "@/app/(auth)/auth";
 import type { VisibilityType } from "@/components/chat/visibility-selector";
-import { titleModel } from "@/lib/ai/models";
 import { titlePrompt } from "@/lib/ai/prompts";
 import { getTitleModel } from "@/lib/ai/providers";
 import {
@@ -29,9 +28,6 @@ export async function generateTitleFromUserMessage({
     model: getTitleModel(),
     system: titlePrompt,
     prompt: getTextFromMessage(message),
-    providerOptions: {
-      gateway: { order: titleModel.gatewayOrder },
-    },
   });
   return text
     .replace(/^[#*"\s]+/, "")
@@ -79,4 +75,54 @@ export async function updateChatVisibility({
   }
 
   await updateChatVisibilityById({ chatId, visibility });
+}
+
+export async function deleteChat({ id }: { id: string }) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const chat = await getChatById({ id });
+  if (!chat || chat.userId !== session.user.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const { deleteChatById } = await import("@/lib/db/queries");
+  await deleteChatById({ id });
+}
+
+export async function getMostRecentChat() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  const { getChatsByUserId } = await import("@/lib/db/queries");
+  const { chats } = await getChatsByUserId({
+    id: session.user.id,
+    limit: 1,
+    startingAfter: null,
+    endingBefore: null,
+  });
+
+  return chats[0] ?? null;
+}
+
+export async function voteMessage({
+  chatId,
+  messageId,
+  type,
+}: {
+  chatId: string;
+  messageId: string;
+  type: "up" | "down";
+}) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const { voteMessage: dbVoteMessage } = await import("@/lib/db/queries");
+  return dbVoteMessage({ chatId, messageId, type });
 }

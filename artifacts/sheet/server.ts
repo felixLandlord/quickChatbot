@@ -1,4 +1,4 @@
-import { streamText } from "ai";
+import { generateText } from "ai";
 import { sheetPrompt, updateDocumentPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
 import { createDocumentHandler } from "@/lib/artifacts/server";
@@ -8,45 +8,45 @@ export const sheetDocumentHandler = createDocumentHandler<"sheet">({
   onCreateDocument: async ({ title, dataStream, modelId }) => {
     let draftContent = "";
 
-    const { fullStream } = streamText({
-      model: getLanguageModel(modelId),
-      system: `${sheetPrompt}\n\nOutput ONLY the raw CSV data. No explanations, no markdown fences.`,
-      prompt: title,
-    });
+    try {
+      const { text } = await generateText({
+        model: getLanguageModel(modelId),
+        prompt: `${sheetPrompt}\n\nTask: ${title}\n\nOutput ONLY the raw CSV data. No explanations, no markdown fences.`,
+      });
+      draftContent = text;
 
-    for await (const delta of fullStream) {
-      if (delta.type === "text-delta") {
-        draftContent += delta.text;
-        dataStream.write({
-          type: "data-sheetDelta",
-          data: draftContent,
-          transient: true,
-        });
-      }
+      dataStream.write({
+        type: "data-sheetDelta",
+        data: draftContent,
+        transient: true,
+      });
+
+      return draftContent;
+    } catch (error) {
+      console.error("Error creating sheet document:", error);
+      throw error;
     }
-
-    return draftContent;
   },
   onUpdateDocument: async ({ document, description, dataStream, modelId }) => {
     let draftContent = "";
 
-    const { fullStream } = streamText({
-      model: getLanguageModel(modelId),
-      system: `${updateDocumentPrompt(document.content, "sheet")}\n\nOutput ONLY the raw CSV data. No explanations, no markdown fences.`,
-      prompt: description,
-    });
+    try {
+      const { text } = await generateText({
+        model: getLanguageModel(modelId),
+        prompt: `${updateDocumentPrompt(document.content, "sheet")}\n\nTask: ${description}\n\nOutput ONLY the raw CSV data. No explanations, no markdown fences.`,
+      });
+      draftContent = text;
 
-    for await (const delta of fullStream) {
-      if (delta.type === "text-delta") {
-        draftContent += delta.text;
-        dataStream.write({
-          type: "data-sheetDelta",
-          data: draftContent,
-          transient: true,
-        });
-      }
+      dataStream.write({
+        type: "data-sheetDelta",
+        data: draftContent,
+        transient: true,
+      });
+
+      return draftContent;
+    } catch (error) {
+      console.error("Error updating sheet document:", error);
+      throw error;
     }
-
-    return draftContent;
   },
 });
